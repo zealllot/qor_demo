@@ -3,6 +3,8 @@ package config
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/configor"
+
+	 _ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 type dbConfig struct{
@@ -25,8 +27,10 @@ func MustGetDB() *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-	db, err := gorm.Open("postgres", "host="+dbconf.Host+" port="+dbconf.Port+" user="+dbconf.User+" dbname="+dbconf.DbName+" password="+dbconf.Password)
-	defer db.Close()
+	db, err := gorm.Open("postgres", "host="+dbconf.Host+" port="+dbconf.Port+" user="+dbconf.User+" dbname="+dbconf.DbName+" password="+dbconf.Password+" sslmode=disable")
+	if err != nil {
+		panic(err)
+	}
 	_dbConn=db
 	return _dbConn
 }

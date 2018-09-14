@@ -1,0 +1,10 @@
+version: '2'
+services:
+  db:
+    image: postgres
+    environment:
+      - "POSTGRES_USER=qor_demo"
+      - "POSTGRES_PASSWORD=123"
+      - "POSTGRES_DB=qor_demo"
+    ports:
+      - 9722:5432

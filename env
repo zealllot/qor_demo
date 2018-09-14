@@ -1,0 +1,5 @@
+export DB_Host = "localhost"
+export DB_Port = "9722"
+export DB_User = "qor_demo"
+export DB_Password = "123"
+export DB_DbName = "qor_demo"

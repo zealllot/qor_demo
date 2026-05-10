@@ -10,8 +10,11 @@ setup:
   # Bring up Postgres (matches docker-compose.yml ports + creds)
   - "docker compose -f docker-compose.yml up -d"
   - "for i in $(seq 1 30); do nc -z 127.0.0.1 9722 && break; sleep 1; done"
-  # Source the env file the app expects
-  - "set -a; . ./env; set +a; go run . > /tmp/qor_demo.log 2>&1 &"
+  # Source the env file the app expects, then start the server.
+  # nohup + </dev/null detaches stdin and ignores SIGHUP so the
+  # process survives after the setup-shell exits (without these,
+  # `go run &` was getting reaped before stage 3 ran).
+  - "set -a; . ./env; set +a; nohup go run . > /tmp/qor_demo.log 2>&1 < /dev/null &"
   - "for i in $(seq 1 60); do curl -fsS http://127.0.0.1:8080/admin >/dev/null 2>&1 && break; sleep 1; done"
 
 base_url: "http://127.0.0.1:8080/admin"

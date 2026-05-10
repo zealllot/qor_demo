@@ -14,13 +14,15 @@ setup:
   # process; `go run` execs a temp binary that can be cleaned up on the
   # parent shell exit).
   - "set -a; . ./env; set +a; go build -o /tmp/qor_demo_bin ."
-  # qor/admin v1 reads its bundled HTML templates from
-  # $GOPATH/src/github.com/qor/admin/views/ at runtime. With Go modules
-  # those templates live under $GOPATH/pkg/mod/.../admin@<ver>/views,
-  # so we symlink the modules path into the GOPATH source layout.
-  # Without this, `/admin` panics on every request with a nil-template
-  # html/template.Execute (see RegisterViewPathError at boot).
-  - "ADMIN_MOD=$(ls -d $(go env GOPATH)/pkg/mod/github.com/qor/admin@v* 2>/dev/null | head -1); mkdir -p $(go env GOPATH)/src/github.com/qor; ln -sfn \"$ADMIN_MOD\" $(go env GOPATH)/src/github.com/qor/admin"
+  # qor/admin v1 looks for its bundled HTML templates at runtime in:
+  #   1. <cwd>/vendor/github.com/qor/admin/views    (first try)
+  #   2. <GOPATH>/pkg/mod/github.com/qor/admin@<ver>/views
+  # With Go modules + a build via `go mod tidy`, the .pkg/mod path *should*
+  # work — but in practice the views aren't always materialized in the
+  # cache the way qor's lookup expects, so /admin panics with
+  # RegisterViewPathError on every request. The robust fix is to vendor
+  # just the views directory (read-only files, no Go source needed):
+  - "ADMIN_MOD_VIEWS=$(go env GOMODCACHE)/github.com/qor/admin@v1.2.0/views; mkdir -p vendor/github.com/qor/admin; chmod -R u+w vendor/github.com/qor/admin 2>/dev/null; cp -r \"$ADMIN_MOD_VIEWS\" vendor/github.com/qor/admin/views"
   # Start it via setsid so it detaches into its own session/process group
   # and survives any parent-shell teardown between stages.
   - "setsid /tmp/qor_demo_bin > /tmp/qor_demo.log 2>&1 < /dev/null &"

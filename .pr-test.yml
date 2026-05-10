@@ -14,18 +14,21 @@ setup:
   # process; `go run` execs a temp binary that can be cleaned up on the
   # parent shell exit).
   - "set -a; . ./env; set +a; go build -o /tmp/qor_demo_bin ."
-  # qor/admin v1 looks for its bundled HTML templates at runtime in:
-  #   1. <cwd>/vendor/github.com/qor/admin/views    (first try)
-  #   2. <GOPATH>/pkg/mod/github.com/qor/admin@<ver>/views
-  # With Go modules + a build via `go mod tidy`, the .pkg/mod path *should*
-  # work — but in practice the views aren't always materialized in the
-  # cache the way qor's lookup expects, so /admin panics with
-  # RegisterViewPathError on every request. The robust fix is to vendor
-  # just the views directory (read-only files, no Go source needed):
-  - "ADMIN_MOD_VIEWS=$(go env GOMODCACHE)/github.com/qor/admin@v1.2.0/views; mkdir -p vendor/github.com/qor/admin; chmod -R u+w vendor/github.com/qor/admin 2>/dev/null; cp -r \"$ADMIN_MOD_VIEWS\" vendor/github.com/qor/admin/views"
+  # qor/admin v1 looks for its bundled HTML templates at runtime in
+  # `<AppRoot>/vendor/github.com/qor/admin/views` first, where AppRoot
+  # = $WEB_ROOT (env) or os.Getwd().
+  #
+  # We can't use the repo's actual `vendor/` dir — Go modules require a
+  # valid vendor/modules.txt to coexist with go.mod, and `go vet`/build
+  # would complain. Instead, build the layout under /tmp and point
+  # WEB_ROOT at it; qor reads from there without touching the repo.
+  # Stage qor/admin views under WEB_ROOT (a /tmp scratch dir), then
+  # launch the server with WEB_ROOT pointing at it. Done this way
+  # instead of touching the real repo's vendor/ to keep go vet clean.
+  - "rm -rf /tmp/qor_root && mkdir -p /tmp/qor_root/vendor/github.com/qor/admin && cp -r $(go env GOMODCACHE)/github.com/qor/admin@v1.2.0/views /tmp/qor_root/vendor/github.com/qor/admin/views"
   # Start it via setsid so it detaches into its own session/process group
   # and survives any parent-shell teardown between stages.
-  - "setsid /tmp/qor_demo_bin > /tmp/qor_demo.log 2>&1 < /dev/null &"
+  - "WEB_ROOT=/tmp/qor_root setsid /tmp/qor_demo_bin > /tmp/qor_demo.log 2>&1 < /dev/null &"
   # Wait for the admin endpoint. On timeout, dump the server log so the
   # next stage's failure is diagnosable from the action artifact alone.
   - "for i in $(seq 1 60); do curl -fsS http://127.0.0.1:8080/admin >/dev/null 2>&1 && break; sleep 1; done || { echo '--- server failed to come up; /tmp/qor_demo.log ---'; tail -200 /tmp/qor_demo.log 2>/dev/null; exit 1; }"

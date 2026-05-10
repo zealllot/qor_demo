@@ -14,6 +14,13 @@ setup:
   # process; `go run` execs a temp binary that can be cleaned up on the
   # parent shell exit).
   - "set -a; . ./env; set +a; go build -o /tmp/qor_demo_bin ."
+  # qor/admin v1 reads its bundled HTML templates from
+  # $GOPATH/src/github.com/qor/admin/views/ at runtime. With Go modules
+  # those templates live under $GOPATH/pkg/mod/.../admin@<ver>/views,
+  # so we symlink the modules path into the GOPATH source layout.
+  # Without this, `/admin` panics on every request with a nil-template
+  # html/template.Execute (see RegisterViewPathError at boot).
+  - "ADMIN_MOD=$(ls -d $(go env GOPATH)/pkg/mod/github.com/qor/admin@v* 2>/dev/null | head -1); mkdir -p $(go env GOPATH)/src/github.com/qor; ln -sfn \"$ADMIN_MOD\" $(go env GOPATH)/src/github.com/qor/admin"
   # Start it via setsid so it detaches into its own session/process group
   # and survives any parent-shell teardown between stages.
   - "setsid /tmp/qor_demo_bin > /tmp/qor_demo.log 2>&1 < /dev/null &"

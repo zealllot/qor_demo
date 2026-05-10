@@ -1,0 +1,26 @@
+name: PRoctor
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+jobs:
+  proctor:
+    if: >-
+      github.event_name != 'issue_comment'
+      || contains(github.event.comment.body, '/proctor run')
+      || contains(github.event.comment.body, '/proctor rerun')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - uses: zealllot/proctor/github-action@v0.2.4
+        with:
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

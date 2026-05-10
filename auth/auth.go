@@ -17,8 +17,8 @@ func Auth(db *gorm.DB, mux *http.ServeMux) {
 	db.AutoMigrate(&auth_identity.AuthIdentity{}, &auth_identity.Basic{})
 
 	// Demo does not actually send mail — skip the SMTP dial entirely.
-	// gomail.v2's NewDialer requires real SMTP creds and would have
-	// panicked the server at startup without one reachable.
+	// gomail.v2 requires real credentials for a reachable mail server and
+	// would panic at startup if those were provided here.
 	mailer := mailer.New(&mailer.Config{
 		Sender: gomailer.New(&gomailer.Config{}),
 	})

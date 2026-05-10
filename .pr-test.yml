@@ -7,6 +7,7 @@ setup:
   # Initialize go.mod so deps resolve in CI's modules-only environment.
   - "test -f go.mod || go mod init github.com/zealllot/qor_demo"
   - "go mod tidy"
+  - "go mod vendor"
   # Bring up Postgres (matches docker-compose.yml ports + creds)
   - "docker compose -f docker-compose.yml up -d"
   - "for i in $(seq 1 30); do nc -z 127.0.0.1 9722 && break; sleep 1; done"

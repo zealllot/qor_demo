@@ -10,23 +10,17 @@ import (
 	"github.com/qor/auth_themes/clean"
 	"github.com/qor/mailer"
 	"github.com/qor/mailer/gomailer"
-	"gopkg.in/gomail.v2"
 )
 
 func Auth(db *gorm.DB, mux *http.ServeMux) {
 	// Migrate AuthIdentity model, AuthIdentity will be used to save auth info, like username/password, oauth token, you could change that.
 	db.AutoMigrate(&auth_identity.AuthIdentity{}, &auth_identity.Basic{})
 
-	// Config gomail
-	dailer := gomail.NewDialer()
-	sender, err := dailer.Dial()
-	if err != nil {
-		panic(err)
-	}
-
-	// Initialize Mailer
+	// Demo does not actually send mail — skip the SMTP dial entirely.
+	// gomail.v2's NewDialer requires real SMTP creds and would have
+	// panicked the server at startup without one reachable.
 	mailer := mailer.New(&mailer.Config{
-		Sender: gomailer.New(&gomailer.Config{Sender: sender}),
+		Sender: gomailer.New(&gomailer.Config{}),
 	})
 
 	// Initialize Auth with configuration

@@ -21,6 +21,6 @@ jobs:
         with:
           go-version: "1.22"
 
-      - uses: zealllot/proctor/github-action@v0.2.6
+      - uses: zealllot/proctor/github-action@v0.2.11
         with:
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
